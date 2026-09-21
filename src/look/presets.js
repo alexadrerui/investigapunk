@@ -38,8 +38,8 @@ export const LOOK_PRESETS = {
   neonNoir: {
     id: "neonNoir",
     label: "Neon Noir",
-    bloom: { strength: 0.62, radius: 0.5 },
-    bloomWide: { strength: 1.45, radius: 0.72 },
+    bloom: { strength: 0.5, radius: 0.5 },
+    bloomWide: { strength: 1.15, radius: 0.72 },
     lensflare: { strength: 0.35, threshold: 0.9, ghostSpacing: 0.22, ghostAttenuation: 50 },
     uniforms: uniforms({
       gradeTint: [1.02, 0.9, 1.06],
