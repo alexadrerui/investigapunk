@@ -7,6 +7,7 @@ import {
   fwidth,
   materialNormal,
   mix,
+  mrt,
   positionView,
   positionWorld,
   reflector,
@@ -66,6 +67,7 @@ export function createGround(scene) {
   const uRippleNormalStrength = uniform(GROUND.rippleNormalStrength);
   const uNormalWarp = uniform(GROUND.normalWarp);
   const uReflectStrength = uniform(GROUND.reflectionStrength);
+  const uReflectBloom = uniform(GROUND.reflectionBloom);
   const uFogNear = uniform(GROUND.fogNear);
   const uFogFar = uniform(GROUND.fogFar);
 
@@ -80,6 +82,7 @@ export function createGround(scene) {
     uRippleNormalStrength,
     uNormalWarp,
     uReflectStrength,
+    uReflectBloom,
     uFogNear,
     uFogFar,
   };
@@ -180,10 +183,14 @@ export function createGround(scene) {
   material.roughnessNode = roughnessSample.mul(uRoughnessScale);
   material.normalNode = materialNormal.add(vec3(rainN.x, rainN.y, 0));
   material.opacityNode = fogVis;
-  material.emissiveNode = reflection.rgb
+  const reflectedLight = reflection.rgb
     .mul(roughnessSample.oneMinus())
     .mul(uReflectStrength)
     .mul(fogVis);
+  material.emissiveNode = reflectedLight;
+  // Bloom é seletivo (só materiais com mrtNode alimentam o buffer de bloom).
+  // Sem isto o neon brilha na fonte, mas o reflexo dele na poça nunca brilha.
+  material.mrtNode = mrt({ bloom: reflectedLight.mul(uReflectBloom) });
 
   const mesh = new THREE.Mesh(new THREE.PlaneGeometry(GROUND.size, GROUND.size), material);
   mesh.name = "ReflectiveGround";

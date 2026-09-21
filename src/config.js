@@ -102,6 +102,7 @@ export const GROUND = {
   uvRepeat: 14.9,
   roughnessScale: 0.55,
   reflectionStrength: 0.14,
+  reflectionBloom: 1,
   normalWarp: 0.022,
   rippleAmount: 1,
   rippleScale: 9.4,
