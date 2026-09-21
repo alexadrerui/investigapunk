@@ -17,6 +17,11 @@ import { toPhysicalNode } from "../materials/toNodeMaterial.js";
 
 const GLASS = new Set(["77_5"]);
 const SKIP = new Set(["mat_0.001"]);
+// Película nos vidros: VLT = fração da luz visível que atravessa (0.30 = película de 30%).
+// Vidro escuro + opacidade (1 - VLT); as gotas ficam mais opacas para continuarem visíveis.
+const GLASS_TINT_VLT = 0.3;
+const GLASS_OPACITY = 1 - GLASS_TINT_VLT;
+const GLASS_DROP_OPACITY = 0.88;
 const FADE_START = 20;
 const FADE_END = 32;
 const FADE_EPS = 0.01;
@@ -97,16 +102,18 @@ function isPaintCandidate(material) {
 }
 
 function patchMaterial(material, shared, { glass }) {
-  const uRainNormalStrength = uniform(glass ? 0.7 : 0.25);
-  const uWetRoughness = uniform(glass ? 0.05 : 0.1);
-  const uWetBrighten = uniform(glass ? 1.2 : 0);
+  // Gotas na pintura: inclinação de normal e rugosidade mais suaves, senão cada
+  // gota vira um ponto branco duro (reflexo de luz de quase-espelho).
+  const uRainNormalStrength = uniform(glass ? 0.45 : 0.12);
+  const uWetRoughness = uniform(glass ? 0.08 : 0.3);
+  const uWetBrighten = uniform(glass ? 0.6 : 0);
 
   if (glass) {
-    material.transparent = false;
+    material.transparent = true;
     material.opacity = 1;
-    material.depthWrite = true;
+    material.depthWrite = false;
     material.side = THREE.FrontSide;
-    material.color.setRGB(0.24, 0.25, 0.26);
+    material.color.setRGB(0.03, 0.035, 0.04);
     material.roughness = 0.12;
     material.metalness = 0;
     material.clearcoat = 1;
@@ -133,6 +140,7 @@ function patchMaterial(material, shared, { glass }) {
   material.roughnessNode = mix(materialRoughness, uWetRoughness, rain.x);
   if (glass) {
     material.colorNode = mix(materialColor, vec3(0.55, 0.6, 0.65), rain.x.mul(uWetBrighten));
+    material.opacityNode = mix(float(GLASS_OPACITY), float(GLASS_DROP_OPACITY), rain.x.clamp(0, 1));
   }
 }
 
