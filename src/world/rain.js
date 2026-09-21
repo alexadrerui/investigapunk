@@ -70,6 +70,8 @@ export async function createRain(scene, camera, { renderer, collisionHeight } = 
   const uSplashOpacity = uniform(params.splashOpacity);
   const uSplashSpeed = uniform(params.splashSpeed);
   const uFallSpeed = uniform(params.fallSpeed);
+  // Fator de frame relativo a 60 Hz: mantém a queda independente da taxa de quadros.
+  const uFrameScale = uniform(1);
   const uDropJitter = uniform(DROP_JITTER);
   const uSplashSize = uniform(params.splashSize);
   const uSplashStart = uniform(params.splashStartScale);
@@ -101,7 +103,7 @@ export async function createRain(scene, camera, { renderer, collisionHeight } = 
   const simulate = Fn(() => {
     const position = positions.element(instanceIndex);
     const velocity = velocities.element(instanceIndex);
-    position.addAssign(velocity);
+    position.addAssign(velocity.mul(uFrameScale));
     const origin = uCameraPos.add(uCameraDir.mul(uForwardOffset));
     const wrappedX = fract(position.x.sub(origin.x).add(uHalfWidth).div(uAreaWidth)).mul(uAreaWidth).sub(uHalfWidth);
     const wrappedZ = fract(position.z.sub(origin.z).add(uHalfHeight).div(uAreaHeight)).mul(uAreaHeight).sub(uHalfHeight);
@@ -262,11 +264,12 @@ export async function createRain(scene, camera, { renderer, collisionHeight } = 
       params.enabled = !!enabled;
       applyVisible();
     },
-    update(_delta, viewCamera) {
+    update(delta, viewCamera) {
       if (!params.enabled) {
         group.visible = false;
         return;
       }
+      uFrameScale.value = delta * 60;
       applyVisible();
       syncParams();
       syncCamera(viewCamera);

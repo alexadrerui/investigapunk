@@ -20,7 +20,7 @@ Vite + JS puro (ES modules), sem framework. `src/main.js` → `boot()` em `src/a
 
 - **Alias do three:** `vite.config.js` redireciona `three` e `three/webgpu` para `three/build/three.webgpu.js`. Portanto `import * as THREE from "three"` já é a build WebGPU (`WebGPURenderer`, `RenderPipeline`). Materiais e shaders são **TSL/node materials**, não GLSL cru.
 - **Renderer** (`core/renderer.js`): tenta WebGPU, cai para backend WebGL (`forceWebGL`) se `init()` falhar. Sombras têm `autoUpdate = false`: são estáticas e renderizadas uma vez via `shadowMap.needsUpdate` no boot. Se mover luz ou geometria que projeta sombra, é preciso marcar `needsUpdate` de novo.
-- **Pós-processamento** (`postfx/pipeline.js`, exportado como `createComposer`): um `THREE.RenderPipeline` com `pass(scene, camera)` e MRT (`output` + buffer `bloom` separado) alimentando bloom duplo (tight + wide), GTAO, SMAA, fog volumétrico, rain glass, lensflare e grade de cor. Cada efeito tem um par: `xxx.js` (estado/controle JS) e `xxxTsl.js` (nós TSL). "Looks" (presets de cor/atmosfera) ficam em `look/presets.js` e são aplicados via `post.applyLook(id)`.
+- **Pós-processamento** (`postfx/pipeline.js`, exportado como `createComposer`): um `THREE.RenderPipeline` com `pass(scene, camera)` e MRT (`output` + buffer `bloom` separado) alimentando bloom duplo (tight + wide), GTAO, SMAA, fog volumétrico, rain glass, lensflare e grade de cor. Os efeitos são nós TSL em `postfx/*Tsl.js` (grade, lensflare, rain glass, fog volumétrico); `bloomSources.js` marca o que entra no buffer de bloom. "Looks" (presets de cor/atmosfera) ficam em `look/presets.js` e são aplicados via `post.applyLook(id)`.
 - **Mundo** (`world/`): `city.js`, `car.js`, `billboards.js` (planos com os vídeos de `assets.js`), `ground.js` (poças/reflexo), `rain.js` + `collisionHeight.js` (a chuva usa um mapa de altura de colisão para decidir onde bate), `carRain.js`, `sky.js`, `planes.js` (dirigíveis).
 - **Colisão:** `core/bvh.js` usa `three-mesh-bvh`; `colider.glb` (nome escrito assim mesmo) é a malha de colisão da cidade. Câmera e personagem fazem raycast contra `[city, boundsCollider, carCollider, ground, ...]`, lista que é montada em `app.js`.
 - **Câmera/jogador:** `camera/controls.js` (`createCameraRig`: modos orbit e walk; `setOrbitOnly` é usado pelo modo dev) e `player/footIkCharacter.js` (personagem `ual.glb` + FootIK via `three-player-controller`). Escalas, alturas e nomes de animação do personagem estão em `PLAYER` em `config.js` (unidades do modelo são cm, daí `scale: 1.68/180`).
@@ -31,6 +31,5 @@ Vite + JS puro (ES modules), sem framework. `src/main.js` → `boot()` em `src/a
 
 ## Pegadinhas
 
-- `src/postfx/stub.js` (`createPostStub`) não é importado por nenhum arquivo; parece resquício.
 - `public/` e `legacy/` duplicam vários assets (áudio, modelos, fontes). O app principal lê de `public/`; `legacy/` é independente.
 - `dist/` é artefato de build (gitignored).
