@@ -3,7 +3,8 @@ import { CAR } from "../config.js";
 import { ASSETS } from "../assets.js";
 import { enableShadows, getGltfLoader } from "../core/gltf.js";
 import { computeObjectBoundsTrees } from "../core/bvh.js";
-import { replaceMeshMaterials, toPhysicalNode } from "../materials/toNodeMaterial.js";
+import { replaceMeshMaterials, setBloomOutput, toPhysicalNode } from "../materials/toNodeMaterial.js";
+import { isGlowing } from "../postfx/bloomSources.js";
 
 const COLLIDER_SHRINK = -0.5;
 const COLLIDER_MIN_HEIGHT = 2.2;
@@ -71,6 +72,14 @@ export async function loadCar(renderer) {
   car.updateWorldMatrix(true, true);
   enableShadows(car);
   replaceMeshMaterials(car, toPhysicalNode);
+  // Lanternas/faróis (materiais emissivos) alimentam o bloom seletivo, como os letreiros.
+  car.traverse((child) => {
+    if (!child.isMesh) return;
+    const list = Array.isArray(child.material) ? child.material : [child.material];
+    for (const material of list) {
+      if (material && isGlowing(material)) setBloomOutput(material, true, CAR.lightBloom);
+    }
+  });
   const collider = createCarCollider(car);
   return { car, collider };
 }

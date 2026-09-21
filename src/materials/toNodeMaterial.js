@@ -65,9 +65,11 @@ export function toPhysicalNode(source) {
   return target;
 }
 
-export function setBloomOutput(material, enabled) {
+export function setBloomOutput(material, enabled, scale = 1) {
   if (!material?.isNodeMaterial) return;
-  material.mrtNode = enabled ? mrt({ bloom: materialEmissive }) : null;
+  material.mrtNode = enabled
+    ? mrt({ bloom: scale === 1 ? materialEmissive : materialEmissive.mul(scale) })
+    : null;
 }
 
 export function replaceMeshMaterials(root, convert = toStandardNode) {

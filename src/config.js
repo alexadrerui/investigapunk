@@ -2,6 +2,9 @@
 
 export const CITY_Y = -20;
 
+/** Bloom das janelas/luzes internas relativo ao dos letreiros de neon (1 = igual). */
+export const WINDOW_BLOOM_SCALE = 0.4;
+
 export const CAMERA = {
   fovDesktop: 65,
   fovMobile: 100,
@@ -94,6 +97,8 @@ export const CAR = {
   position: [-128, -5.47, 33],
   rotationY: Math.PI / 2 + 0.6,
   scale: 1.1,
+  /** Bloom das lanternas do carro relativo ao dos letreiros (1 = igual). */
+  lightBloom: 0.6,
 };
 
 export const GROUND = {
