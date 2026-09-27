@@ -15,8 +15,11 @@ export const CAMERA = {
   walkEyeHeight: 1.55,
   walkAcceleration: 10,
   walkDeceleration: 14,
-  moveSpeed: 3,
-  sprintMultiplier: 3,
+  // Baseado no exemplo footIK do three-player-controller (speed 100 e runSpeed 600
+  // numa cápsula de 180 = 0,93 e 5,6 m/s no personagem de 1,68 m), com a caminhada
+  // um pouco mais rápida. Walk_Loop toca a ~1,4× e Sprint_Loop a 1× (PLAYER.clipSpeeds).
+  moveSpeed: 1.2,
+  sprintMultiplier: 4.67,
   mouseSensitivity: 0.002,
   crouchMultiplier: 0.55,
   sprintRampUp: 1.6,
@@ -45,6 +48,11 @@ export const PLAYER = {
   idleAnim: "Idle_Loop",
   walkAnim: "Walk_Loop",
   runAnim: "Sprint_Loop",
+  // Velocidade de locomoção (m/s, com a escala do personagem) que cada clipe
+  // cobre com timeScale 1. Walk foi medido pelo deslocamento do pé apoiado; run
+  // é o runSpeed do exemplo footIK, onde o Sprint_Loop toca a 1×.
+  // O timeScale = velocidade real / clipSpeed é o que evita o pé "patinar".
+  clipSpeeds: { walk: 0.87, run: 5.6 },
   headBoneName: "Head",
   walkSpeedThreshold: 0.35,
   runSpeedThreshold: 5.4,

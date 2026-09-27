@@ -15,6 +15,9 @@ const SKELETON = {
 };
 
 const FADE = 0.22;
+const GAIT_HYSTERESIS = 1.08;
+const TIME_SCALE_MIN = 0.3;
+const TIME_SCALE_MAX = 2.2;
 const UP = new THREE.Vector3(0, 1, 0);
 const HEAD_SWAY_IDLE_WEIGHT = 0.08;
 const HEAD_SWAY_MOVE_WEIGHT = 0.35;
@@ -97,6 +100,16 @@ export async function createFootIkCharacter({
     run: runClip ? createAction(mixer, runClip) : null,
   };
   if (actions.idle) actions.idle.setEffectiveWeight(1);
+
+  // Marchas em ordem de velocidade. Cada uma cobre a faixa em que o timeScale
+  // fica mais perto de 1, então a troca acontece na média geométrica entre as
+  // velocidades naturais de dois clipes vizinhos.
+  const gaits = [
+    { action: actions.walk, key: "walk" },
+    { action: actions.run, key: "run" },
+  ].filter((gait, i, list) => gait.action && list.findIndex((g) => g.action === gait.action) === i);
+  const gaitSpeed = (gait) => PLAYER.clipSpeeds[gait.key];
+  let gaitIndex = 0;
 
   const headBone = playerModel.getObjectByName(PLAYER.headBoneName)
     ?? playerModel.getObjectByName("head");
@@ -220,16 +233,29 @@ export async function createFootIkCharacter({
     });
   }
 
+  function pickGait(speed) {
+    let index = gaitIndex;
+    while (index < gaits.length - 1) {
+      const limit = Math.sqrt(gaitSpeed(gaits[index]) * gaitSpeed(gaits[index + 1])) * GAIT_HYSTERESIS;
+      if (speed <= limit) break;
+      index += 1;
+    }
+    while (index > 0) {
+      const limit = Math.sqrt(gaitSpeed(gaits[index - 1]) * gaitSpeed(gaits[index])) / GAIT_HYSTERESIS;
+      if (speed >= limit) break;
+      index -= 1;
+    }
+    return index;
+  }
+
   function syncLocomotion(speed) {
     let next = actions.idle;
-    if (speed >= PLAYER.runSpeedThreshold) next = actions.run ?? actions.walk ?? actions.idle;
-    else if (speed >= PLAYER.walkSpeedThreshold) next = actions.walk ?? actions.idle;
-    if (next === actions.walk && actions.walk) {
-      actions.walk.timeScale = THREE.MathUtils.clamp(speed / Math.max(CAMERA.moveSpeed, 0.01), 0.75, 1.45);
-    }
-    if (next === actions.run && actions.run) {
-      const sprint = CAMERA.moveSpeed * CAMERA.sprintMultiplier;
-      actions.run.timeScale = THREE.MathUtils.clamp(speed / Math.max(sprint, 0.01), 0.8, 1.25);
+    if (speed >= PLAYER.walkSpeedThreshold && gaits.length) {
+      gaitIndex = pickGait(speed);
+      const gait = gaits[gaitIndex];
+      next = gait.action;
+      // Avança o ciclo na mesma taxa em que o corpo se move: pé apoiado não desliza.
+      gait.action.timeScale = THREE.MathUtils.clamp(speed / gaitSpeed(gait), TIME_SCALE_MIN, TIME_SCALE_MAX);
     }
     currentAction = playAction(next, currentAction);
     animation.state = currentAction;
