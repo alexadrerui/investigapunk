@@ -6,6 +6,7 @@ import {
   float,
   fwidth,
   materialNormal,
+  max,
   mix,
   mrt,
   positionView,
@@ -68,6 +69,8 @@ export function createGround(scene) {
   const uNormalWarp = uniform(GROUND.normalWarp);
   const uReflectStrength = uniform(GROUND.reflectionStrength);
   const uReflectBloom = uniform(GROUND.reflectionBloom);
+  const uReflectSourceBoost = uniform(GROUND.reflectionSourceBoost);
+  const uReflectCap = uniform(GROUND.reflectionCap);
   const uFogNear = uniform(GROUND.fogNear);
   const uFogFar = uniform(GROUND.fogFar);
 
@@ -83,6 +86,8 @@ export function createGround(scene) {
     uNormalWarp,
     uReflectStrength,
     uReflectBloom,
+    uReflectSourceBoost,
+    uReflectCap,
     uFogNear,
     uFogFar,
   };
@@ -183,10 +188,21 @@ export function createGround(scene) {
   material.roughnessNode = roughnessSample.mul(uRoughnessScale);
   material.normalNode = materialNormal.add(vec3(rainN.x, rainN.y, 0));
   material.opacityNode = fogVis;
-  const reflectedLight = reflection.rgb
+  // O reflexo é linear e só escalado por uReflectStrength, enquanto a visão direta
+  // passa pelo tonemapping: fontes de luz com emissivo baixo (ex.: o laranja do
+  // "Burg Empire", ~1,3 contra ~4 dos outros neons) ficavam escuras na água.
+  // Pixels bem mais brilhantes que a superfície comum (fontes de luz) ganham um
+  // reforço, e um teto suave impede que as de emissivo altíssimo estourem.
+  const reflectedPeak = max(max(reflection.r, reflection.g), reflection.b);
+  const sourceBoost = float(1).add(uReflectSourceBoost.mul(smoothstep(0.5, 1.5, reflectedPeak)));
+  const boosted = reflection.rgb
+    .mul(sourceBoost)
     .mul(roughnessSample.oneMinus())
     .mul(uReflectStrength)
     .mul(fogVis);
+  // Teto pelo pico dos canais (não por canal), para não deslocar o matiz do neon.
+  const boostedPeak = max(max(boosted.r, boosted.g), boosted.b);
+  const reflectedLight = boosted.div(float(1).add(boostedPeak.div(uReflectCap)));
   material.emissiveNode = reflectedLight;
   // Bloom é seletivo (só materiais com mrtNode alimentam o buffer de bloom).
   // Sem isto o neon brilha na fonte, mas o reflexo dele na poça nunca brilha.

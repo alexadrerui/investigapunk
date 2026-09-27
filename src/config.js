@@ -116,6 +116,9 @@ export const GROUND = {
   roughnessScale: 0.55,
   reflectionStrength: 0.14,
   reflectionBloom: 1,
+  /** Reforço do reflexo de fontes de luz (pixels brilhantes) e teto suave do reflexo. */
+  reflectionSourceBoost: 2,
+  reflectionCap: 2,
   normalWarp: 0.022,
   rippleAmount: 1,
   rippleScale: 9.4,
